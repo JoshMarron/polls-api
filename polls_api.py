@@ -58,9 +58,8 @@ def details_company(company_name):
 @app.route('/companies/<company_name>/polls/<int:page_num>/')
 def list_company_polls(company_name, page_num=1):
     company = models.Company.query.filter_by(canonical=company_name).one()
-    id_list = [poll.id for poll in company.company_polls]
-    poll_list = models.Poll.query.filter(models.Poll.id.in_(id_list)).order_by(desc(models.Poll.date)).paginate(page_num, 20)
-    return flask.jsonify(company_polls=[poll.serialize for poll in poll_list.items])
+    polls = company.company_polls.filter().order_by(desc(models.Poll.date)).paginate(page_num, 20)
+    return flask.jsonify(company_polls=[poll.serialize for poll in polls.items])
 
 @app.route('/polls/')
 @app.route('/polls/<int:page_num>/')

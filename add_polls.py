@@ -3,17 +3,21 @@ from models import Company, Party, Poll, PollParty
 from datetime import datetime
 from dateutil import tz
 from dateutil import parser
+import requests
 import arrow
-
 import json
 
 
-with open('json_data/scotland-regional.json', 'r') as westminster_file:
-    west_polls = json.load(westminster_file)
+#with open('json_data/scotland-regional.json', 'r') as westminster_file:
+#    poll_json = json.load(westminster_file)
 
-for poll in west_polls:
+r = requests.get('http://opinionbee.uk/json/eu-membership')
+poll_json = r.json()
+
+
+for poll in poll_json:
     id = poll
-    details = west_polls.get(id)
+    details = poll_json.get(id)
 
     # Converts the date to UTC before storing
     date = parser.parse(details.get('date').get('date'))
@@ -25,6 +29,7 @@ for poll in west_polls:
     # Get other attributes
     title = details.get('type').get('name')
     company_code = details.get('company').get('code')
+    if company_code == 'SMONKEY': company_code = 'SMNKEY'
     client = details.get('client')
     if not client: client = None
 
