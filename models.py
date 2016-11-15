@@ -80,6 +80,8 @@ class Poll(db.Model):
 
     @property
     def serialize_company(self):
+        if self.company is None:
+            return None
         return self.company.serialize
 
     @property

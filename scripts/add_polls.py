@@ -11,7 +11,7 @@ import json
 #with open('json_data/scotland-regional.json', 'r') as westminster_file:
 #    poll_json = json.load(westminster_file)
 
-r = requests.get('http://opinionbee.uk/json/eu-membership')
+r = requests.get('http://opinionbee.uk/json/scotland-regional')
 poll_json = r.json()
 
 

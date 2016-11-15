@@ -34,15 +34,15 @@ def details_party(party_code):
 @app.route('/parties/<party_code>/polls/')
 @app.route('/parties/<party_code>/polls/<int:page_num>/')
 def list_party_polls(party_code, page_num=1):
-    return_list = []
+    polls_list = []
     party = models.Party.query.get(party_code.upper())
     id_list = [poll.poll_id for poll in party.polls]
     poll_list = models.Poll.query.filter(models.Poll.id.in_(id_list)).order_by(desc(models.Poll.date)).paginate(page_num, 50)
     for poll in poll_list.items:
         return_val = poll.serialize_for_party
         return_val["score"] = models.PollParty.query.get((poll.id, party_code.upper())).score
-        return_list.append(return_val)
-    return flask.jsonify(return_list)
+        polls_list.append(return_val)
+    return flask.jsonify(polls_list)
 
 @app.route('/companies/')
 def list_companies():
@@ -86,6 +86,10 @@ def list_categories():
 def list_category_polls(category, page_num=1):
     polls_page = models.Poll.query.filter_by(category=category).order_by(desc(models.Poll.date)).paginate(page_num, 50)
     return flask.jsonify(category_list=[poll.serialize for poll in polls_page.items])
+
+@app.errorhandler(404)
+def not_found_error(e):
+    return flask.jsonify(error=404, text=str(e)), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
