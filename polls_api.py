@@ -24,7 +24,7 @@ def list_current_polls(page_num=1):
 @app.route('/parties/')
 def list_parties():
     parties = models.Party.query.filter().all()
-    return flask.jsonify(party_list=[party.serialize for party in parties])
+    return flask.jsonify(parties=[party.serialize for party in parties])
 
 @app.route('/parties/<party_code>/')
 def details_party(party_code):
@@ -47,7 +47,7 @@ def list_party_polls(party_code, page_num=1):
 @app.route('/companies/')
 def list_companies():
     companies = models.Company.query.filter().all()
-    return flask.jsonify(company_list=[company.serialize for company in companies])
+    return flask.jsonify(companies=[company.serialize for company in companies])
 
 @app.route('/companies/<company_name>/')
 def details_company(company_name):
@@ -59,14 +59,14 @@ def details_company(company_name):
 def list_company_polls(company_name, page_num=1):
     company = models.Company.query.filter_by(canonical=company_name).one()
     polls = company.company_polls.filter().order_by(desc(models.Poll.date)).paginate(page_num, 20)
-    return flask.jsonify(company_polls=[poll.serialize for poll in polls.items])
+    return flask.jsonify(polls=[poll.serialize for poll in polls.items])
 
 @app.route('/polls/')
 @app.route('/polls/<int:page_num>/')
 def list_polls(page_num=1):
     polls_page = models.Poll.query.filter().order_by(desc(models.Poll.date)).paginate(page_num, 50)
     polls = polls_page.items
-    return flask.jsonify(polls_list=[poll.serialize for poll in polls])
+    return flask.jsonify(polls=[poll.serialize for poll in polls])
 
 @app.route('/polls/id/<int:poll_id>/')
 def details_poll(poll_id):
@@ -75,17 +75,14 @@ def details_poll(poll_id):
 
 @app.route('/polls/categories/')
 def list_categories():
-    categories = []
-    polls = models.Poll.query.filter().distinct(models.Poll.category).all()
-    for poll in polls:
-        categories.append(poll.category)
-    return flask.jsonify(categories)
+    categories = db.session.query(models.Poll.category.distinct()).all()
+    return flask.jsonify([category[0] for category in categories])
 
 @app.route('/polls/<string:category>/')
 @app.route('/polls/<string:category>/<int:page_num>')
 def list_category_polls(category, page_num=1):
     polls_page = models.Poll.query.filter_by(category=category).order_by(desc(models.Poll.date)).paginate(page_num, 50)
-    return flask.jsonify(category_list=[poll.serialize for poll in polls_page.items])
+    return flask.jsonify(polls=[poll.serialize for poll in polls_page.items])
 
 @app.errorhandler(404)
 def not_found_error(e):

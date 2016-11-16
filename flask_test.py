@@ -109,18 +109,18 @@ class FlaskTests(unittest.TestCase):
         response_json_page1 = json.loads(decoded_page1)
 
         # Check we only get 50 responses on page 1
-        assert len(response_json_page1['polls_list']) == 50
+        assert len(response_json_page1['polls']) == 50
 
         response_page2 = self.app.get('/polls/2/')
         decoded_page2 = response_page2.get_data().decode('utf-8')
         response_json_page2 = json.loads(decoded_page2)
 
         # Check we only get 50 responses on page 2
-        assert len(response_json_page2['polls_list']) == 50
+        assert len(response_json_page2['polls']) == 50
 
         # Check the top items of each page are not the same
-        top_poll1 = response_json_page1['polls_list'][0]
-        top_poll2 = response_json_page2['polls_list'][0]
+        top_poll1 = response_json_page1['polls'][0]
+        top_poll2 = response_json_page2['polls'][0]
 
         assert top_poll1 != top_poll2
 
@@ -151,10 +151,10 @@ class FlaskTests(unittest.TestCase):
         # Check we get two polls for the company
         decoded = response.get_data().decode('utf-8')
         response_json = json.loads(decoded)
-        assert len(response_json['company_polls']) == 2
+        assert len(response_json['polls']) == 2
 
         # Check they are sorted by date
-        response_date = arrow.get(response_json['company_polls'][0].get('date')).datetime
+        response_date = arrow.get(response_json['polls'][0].get('date')).datetime
         assert response_date == date2
 
         # Check the two polls are the ones we defined
@@ -207,6 +207,59 @@ class FlaskTests(unittest.TestCase):
         assert "PAR1" in parties
         assert "PAR2" in parties
         assert "PAR3" in parties
+
+    def test_list_categories(self):
+
+        date1 = arrow.get('2014-10-23').datetime
+        for i in range(1, 250):
+            poll = models.Poll(id=i, date=date1, url="someurl", category="m",
+                               title="sometitle", client="someclient")
+            db.session.add(poll)
+        for i in range(251, 500):
+            poll = models.Poll(id=i, date=date1, url="someurl", category="n",
+                               title="someothertitle", client="someotherclient")
+            db.session.add(poll)
+        db.session.commit()
+
+        response = self.app.get('polls/categories/')
+        assert response.status_code == 200
+        decoded = response.get_data().decode('utf-8')
+        response_json = json.loads(decoded)
+
+        assert len(response_json) == 2
+        assert "m" in response_json
+        assert "n" in response_json
+
+    def test_get_specific_poll(self):
+
+        date1 = arrow.get('2014-10-23').datetime
+        date2 = arrow.get('2017-11-24').datetime
+
+        poll1 = models.Poll(id=1, date=date1, url="fe", category="m",
+                            title="sometitle", client="someclient")
+        poll2 = models.Poll(id=2, date=date2, url="someurl", category="m",
+                            title="someothertitle", client="someclient")
+
+        db.session.add(poll1)
+        db.session.add(poll2)
+        db.session.commit()
+
+        response = self.app.get('/polls/id/1/')
+        assert response.status_code == 200
+        decoded = response.get_data().decode('utf-8')
+        response_json = json.loads(decoded)
+        assert response_json['title'] == "sometitle"
+
+        response = self.app.get('/polls/id/2/')
+        assert response.status_code == 200
+        decoded = response.get_data().decode('utf-8')
+        response_json = json.loads(decoded)
+        assert response_json['title'] == "someothertitle"
+
+        response = self.app.get('/polls/id/3/')
+        assert response.status_code == 404
+
+
 
 if __name__ == '__main__':
     unittest.main()
